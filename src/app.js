@@ -62,7 +62,7 @@ app.use(session({
 
 router.get('/', async ctx => {
   if (ctx.session.user) {
-    let messages = db.get('messages').sort('date').filter(message => {
+    let messages = db.get('messages').filter(message => {
       if (message.chat.type === "private") {
         return false
       }
