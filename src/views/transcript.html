@@ -1,0 +1,19 @@
+<div>
+
+<%
+  Object.keys(messages).forEach(groupId => {
+    let group = groups.find(g => g.id === Number(groupId))
+%>
+  <h4><%= group.title %></h4>
+  <pre><code>
+<%
+    messages[groupId].forEach(message => {
+%>[<%= (new Date(message.date * 1000)).toLocaleString() %>] <%= message.from.username %>: <%= message.text %>
+<%
+    })
+%>
+  </code></pre>
+<%
+  })
+%>
+</div>
