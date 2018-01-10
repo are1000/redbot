@@ -27,7 +27,7 @@
 
   const actions = {
     requestData: () => async (state, actions) => {
-      let response = await fetch('//localhost:8083/transcript', {
+      let response = await fetch('//redbot.iama.re/transcript', {
         credentials: 'include'
       })
       let data = await response.json()
