@@ -62,22 +62,35 @@ app.use(session({
 
 router.get('/', async ctx => {
   if (ctx.session.user) {
+    await ctx.render('transcript', {
+      username: ctx.session.user.login
+    })
+  } else {
+    await ctx.render('index', { client_id: process.env.GITHUB_CLIENT_ID })
+  }
+})
+
+router.get('/transcript', async ctx => {
+  if (ctx.session.user) {
     let messages = db.get('messages').sortBy(o => o.date).filter(message => {
       if (message.chat.type === "private") {
         return false
       }
-
-
       return true
     })
 
-    await ctx.render('transcript', {
-      username: ctx.session.user.login,
-      messages: messages.groupBy('chat.id').value(),
-      groups: messages.map('chat').uniqBy('id').value()
-    })
+    let msg = messages.groupBy('chat.id').value()
+    let groups = messages.map('chat').uniqBy('id').value()
+
+    ctx.body = {
+      messages: msg,
+      groups
+    }
+
   } else {
-    await ctx.render('index', { client_id: process.env.GITHUB_CLIENT_ID })
+    ctx.body = {
+      error: 'Please authenticate with Github to use this endpoint.'
+    }
   }
 })
 

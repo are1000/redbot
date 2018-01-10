@@ -1,19 +1,80 @@
-<div>
+<div id="content"></div>
+<script src="https://unpkg.com/hyperapp"></script>
+<script>
+  const compose = function (...fs) {
+    return x => fs.reduceRight((v, f) => f(v), x)
+  }
 
-<%
-  Object.keys(messages).forEach(groupId => {
-    let group = groups.find(g => g.id === Number(groupId))
-%>
-  <h4><%= group.title %></h4>
-  <pre><code style="white-space: pre-wrap;">
-<%
-    messages[groupId].forEach(message => {
-%>[<%= (new Date(message.date * 1000)).toLocaleString() %>] <%= message.from.username %>: <%= message.text %>
-<%
-    })
-%>
-  </code></pre>
-<%
-  })
-%>
-</div>
+  const concat = function (xs) {
+    return Array.prototype.concat.apply([], xs)
+  }
+
+  const map = function (f, xs) {
+    return xs.map(f)
+  }
+
+  const flatmap = function (f, xs) {
+    return concat(map(f, xs))
+  }
+
+  const { h, app } = hyperapp
+
+  const state = {
+    error: null,
+    messages: {},
+    groups: []
+  }
+
+  const actions = {
+    requestData: () => async (state, actions) => {
+      let response = await fetch('//localhost:8083/transcript', {
+        credentials: 'include'
+      })
+      let data = await response.json()
+
+      actions.setData(data)
+    },
+    setData: data => state => {
+      return data
+    }
+  }
+
+  const view = (state, actions) => {
+    if (state.error) {
+      return h("div", { class: "error" }, state.error)
+    }
+
+    return h("div", { style: { padding: "30px" } }, map(group => {
+      let prev = 0
+      return flatmap(message => {
+        let result = []
+        if (message.date - prev > 60) {
+          result.push(h("pre", { style: { "color": "rgb(200, 200, 200)", "text-align": "center" }}, (new Date(message.date * 1000)).toLocaleString()))
+        }
+
+        prev = message.date
+
+        let name = 'UNKNOWN'
+        if (message.from.username) {
+          name = message.from.username
+        } else {
+          if (message.from.first_name) {
+            name = message.from.first_name
+
+            if (message.from.last_name) {
+              name += ' ' + message.from.last_name
+            }
+          }
+        }
+
+        result.push(h("pre", {}, `${name}: ${message.text}`))
+
+        return result
+      }, state.messages[group.id])
+    }, state.groups))
+  }
+
+  window.main = app(state, actions, view, document.getElementById('content'))
+  window.main.requestData()
+
+</script>
